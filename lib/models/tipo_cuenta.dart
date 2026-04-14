@@ -1,0 +1,4 @@
+enum TipoCuenta {
+  gratuita,
+  premium,
+}
