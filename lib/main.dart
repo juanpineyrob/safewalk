@@ -7,12 +7,14 @@ import 'viewmodels/caminata_viewmodel.dart';
 import 'viewmodels/mapa_viewmodel.dart';
 import 'viewmodels/notificacion_viewmodel.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final authViewModel = AuthViewModel();
+  await authViewModel.restaurarSesion();
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => AuthViewModel()),
+        ChangeNotifierProvider.value(value: authViewModel),
         ChangeNotifierProvider(create: (_) => MapaViewModel()),
         ChangeNotifierProvider(create: (_) => CaminataViewModel()),
         ChangeNotifierProvider(create: (_) => NotificacionViewModel()),

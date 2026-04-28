@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../viewmodels/auth_viewmodel.dart';
 
 class RegistroScreen extends StatefulWidget {
   const RegistroScreen({super.key});
@@ -28,14 +30,27 @@ class _RegistroScreenState extends State<RegistroScreen> {
     super.dispose();
   }
 
-  void _registrarse() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Conectar con AuthViewModel
+  Future<void> _registrarse() async {
+    if (!_formKey.currentState!.validate()) return;
+    final auth = context.read<AuthViewModel>();
+    final ok = await auth.registrarse(
+      nombre: _nombreController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+    );
+    if (!mounted) return;
+    if (ok) {
+      context.go('/home');
+    } else if (auth.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(auth.error!)),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthViewModel>();
     return Scaffold(
       appBar: AppBar(
         leading: Semantics(
@@ -57,7 +72,6 @@ class _RegistroScreenState extends State<RegistroScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Ícono
                   Semantics(
                     label: 'Ícono de registro',
                     child: Container(
@@ -75,8 +89,6 @@ class _RegistroScreenState extends State<RegistroScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // Título
                   Text(
                     'Crear cuenta',
                     textAlign: TextAlign.center,
@@ -94,8 +106,6 @@ class _RegistroScreenState extends State<RegistroScreen> {
                         ),
                   ),
                   const SizedBox(height: 32),
-
-                  // Campo nombre
                   Semantics(
                     textField: true,
                     label: 'Nombre completo',
@@ -104,6 +114,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
                       keyboardType: TextInputType.name,
                       textInputAction: TextInputAction.next,
                       textCapitalization: TextCapitalization.words,
+                      enabled: !auth.cargando,
                       decoration: const InputDecoration(
                         labelText: 'Nombre completo',
                         prefixIcon: Icon(Icons.person_outline),
@@ -117,8 +128,6 @@ class _RegistroScreenState extends State<RegistroScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // Campo email
                   Semantics(
                     textField: true,
                     label: 'Correo electrónico',
@@ -127,6 +136,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
                       textInputAction: TextInputAction.next,
+                      enabled: !auth.cargando,
                       decoration: const InputDecoration(
                         labelText: 'Correo electrónico',
                         prefixIcon: Icon(Icons.email_outlined),
@@ -143,8 +153,6 @@ class _RegistroScreenState extends State<RegistroScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // Campo contraseña
                   Semantics(
                     textField: true,
                     label: 'Contraseña',
@@ -152,6 +160,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
                       controller: _passwordController,
                       obscureText: _ocultarPassword,
                       textInputAction: TextInputAction.next,
+                      enabled: !auth.cargando,
                       decoration: InputDecoration(
                         labelText: 'Contraseña',
                         prefixIcon: const Icon(Icons.lock_outline),
@@ -186,8 +195,6 @@ class _RegistroScreenState extends State<RegistroScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // Campo confirmar contraseña
                   Semantics(
                     textField: true,
                     label: 'Confirmar contraseña',
@@ -195,6 +202,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
                       controller: _confirmarPasswordController,
                       obscureText: _ocultarConfirmar,
                       textInputAction: TextInputAction.done,
+                      enabled: !auth.cargando,
                       onFieldSubmitted: (_) => _registrarse(),
                       decoration: InputDecoration(
                         labelText: 'Confirmar contraseña',
@@ -230,19 +238,24 @@ class _RegistroScreenState extends State<RegistroScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-
-                  // Botón registrarse
                   Semantics(
                     button: true,
                     label: 'Registrarse',
                     child: ElevatedButton(
-                      onPressed: _registrarse,
-                      child: const Text('Registrarse'),
+                      onPressed: auth.cargando ? null : _registrarse,
+                      child: auth.cargando
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Registrarse'),
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // Link a login
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -254,7 +267,8 @@ class _RegistroScreenState extends State<RegistroScreen> {
                         button: true,
                         label: 'Ir a iniciar sesión',
                         child: TextButton(
-                          onPressed: () => context.pop(),
+                          onPressed:
+                              auth.cargando ? null : () => context.pop(),
                           child: const Text('Inicia sesión'),
                         ),
                       ),

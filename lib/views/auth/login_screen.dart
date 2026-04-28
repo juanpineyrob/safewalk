@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
 
 import '../../core/theme/app_theme.dart';
+import '../../viewmodels/auth_viewmodel.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -23,14 +25,26 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _iniciarSesion() {
-    if (_formKey.currentState!.validate()) {
-      // TODO: Conectar con AuthViewModel
+  Future<void> _iniciarSesion() async {
+    if (!_formKey.currentState!.validate()) return;
+    final auth = context.read<AuthViewModel>();
+    final ok = await auth.iniciarSesion(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
+    if (!mounted) return;
+    if (ok) {
+      context.go('/home');
+    } else if (auth.error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(auth.error!)),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.watch<AuthViewModel>();
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -42,7 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Logo / Ícono
                   Semantics(
                     label: 'Logo de SafeWalk',
                     child: Container(
@@ -60,8 +73,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // Título
                   Text(
                     'SafeWalk',
                     textAlign: TextAlign.center,
@@ -79,8 +90,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                   ),
                   const SizedBox(height: 40),
-
-                  // Campo email
                   Semantics(
                     textField: true,
                     label: 'Correo electrónico',
@@ -89,6 +98,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
                       textInputAction: TextInputAction.next,
+                      enabled: !auth.cargando,
                       decoration: const InputDecoration(
                         labelText: 'Correo electrónico',
                         prefixIcon: Icon(Icons.email_outlined),
@@ -105,8 +115,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // Campo contraseña
                   Semantics(
                     textField: true,
                     label: 'Contraseña',
@@ -114,6 +122,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       controller: _passwordController,
                       obscureText: _ocultarPassword,
                       textInputAction: TextInputAction.done,
+                      enabled: !auth.cargando,
                       onFieldSubmitted: (_) => _iniciarSesion(),
                       decoration: InputDecoration(
                         labelText: 'Contraseña',
@@ -146,31 +155,32 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-
-                  // Olvidé contraseña
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {
-                        // TODO: Recuperar contraseña
-                      },
+                      onPressed: auth.cargando ? null : () {},
                       child: const Text('¿Olvidaste tu contraseña?'),
                     ),
                   ),
                   const SizedBox(height: 16),
-
-                  // Botón iniciar sesión
                   Semantics(
                     button: true,
                     label: 'Iniciar sesión',
                     child: ElevatedButton(
-                      onPressed: _iniciarSesion,
-                      child: const Text('Iniciar sesión'),
+                      onPressed: auth.cargando ? null : _iniciarSesion,
+                      child: auth.cargando
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text('Iniciar sesión'),
                     ),
                   ),
                   const SizedBox(height: 24),
-
-                  // Separador
                   Row(
                     children: [
                       const Expanded(child: Divider()),
@@ -185,13 +195,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     ],
                   ),
                   const SizedBox(height: 24),
-
-                  // Botón registro
                   Semantics(
                     button: true,
                     label: 'Crear una cuenta nueva',
                     child: OutlinedButton(
-                      onPressed: () => context.pushNamed('registro'),
+                      onPressed: auth.cargando
+                          ? null
+                          : () => context.pushNamed('registro'),
                       child: const Text('Crear cuenta'),
                     ),
                   ),

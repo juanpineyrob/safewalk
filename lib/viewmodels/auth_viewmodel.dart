@@ -1,10 +1,14 @@
 import 'package:flutter/foundation.dart';
 
 import '../models/usuario.dart';
+import '../services/api_client.dart';
 import '../services/auth_service.dart';
 
 class AuthViewModel extends ChangeNotifier {
-  final AuthService _authService = AuthService();
+  AuthViewModel({AuthService? authService})
+      : _authService = authService ?? AuthService();
+
+  final AuthService _authService;
 
   Usuario? _usuario;
   bool _cargando = false;
@@ -15,6 +19,18 @@ class AuthViewModel extends ChangeNotifier {
   String? get error => _error;
   bool get autenticado => _usuario != null;
 
+  Future<void> restaurarSesion() async {
+    _cargando = true;
+    notifyListeners();
+    try {
+      _usuario = await _authService.obtenerSesionPersistida();
+    } catch (_) {
+      _usuario = null;
+    }
+    _cargando = false;
+    notifyListeners();
+  }
+
   Future<bool> iniciarSesion(String email, String password) async {
     _cargando = true;
     _error = null;
@@ -24,9 +40,16 @@ class AuthViewModel extends ChangeNotifier {
       _usuario = await _authService.iniciarSesion(email, password);
       _cargando = false;
       notifyListeners();
-      return _usuario != null;
-    } catch (e) {
-      _error = 'Error al iniciar sesión';
+      return true;
+    } on ApiException catch (e) {
+      _error = e.statusCode == 401
+          ? 'Email o contraseña incorrectos'
+          : e.mensaje;
+      _cargando = false;
+      notifyListeners();
+      return false;
+    } catch (_) {
+      _error = 'No se pudo iniciar sesión. Verifica tu conexión.';
       _cargando = false;
       notifyListeners();
       return false;
@@ -50,9 +73,16 @@ class AuthViewModel extends ChangeNotifier {
       );
       _cargando = false;
       notifyListeners();
-      return _usuario != null;
-    } catch (e) {
-      _error = 'Error al registrarse';
+      return true;
+    } on ApiException catch (e) {
+      _error = e.statusCode == 409
+          ? 'El email ya está registrado'
+          : e.mensaje;
+      _cargando = false;
+      notifyListeners();
+      return false;
+    } catch (_) {
+      _error = 'No se pudo registrar. Verifica tu conexión.';
       _cargando = false;
       notifyListeners();
       return false;
