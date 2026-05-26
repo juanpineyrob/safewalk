@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
@@ -411,6 +412,13 @@ class _FloatingSearchHeader extends StatelessWidget {
                 ),
               ),
             ),
+          ),
+          IconButton(
+            onPressed: () => context.push('/wearable'),
+            tooltip: 'Vista wearable',
+            icon: const Icon(Icons.watch_outlined),
+            color: AppTheme.grisSecundario,
+            visualDensity: VisualDensity.compact,
           ),
           Container(width: 1, height: 28, color: AppTheme.outlineSuave),
           const SizedBox(width: 6),
