@@ -48,7 +48,8 @@ class AuthViewModel extends ChangeNotifier {
       _cargando = false;
       notifyListeners();
       return false;
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('iniciarSesion: error inesperado: $e\n$st');
       _error = 'No se pudo iniciar sesión. Verifica tu conexión.';
       _cargando = false;
       notifyListeners();
@@ -81,7 +82,8 @@ class AuthViewModel extends ChangeNotifier {
       _cargando = false;
       notifyListeners();
       return false;
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('registrarse: error inesperado: $e\n$st');
       _error = 'No se pudo registrar. Verifica tu conexión.';
       _cargando = false;
       notifyListeners();

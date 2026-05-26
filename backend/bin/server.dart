@@ -7,17 +7,22 @@ import 'package:shelf_router/shelf_router.dart';
 import 'package:safewalk_backend/db.dart';
 import 'package:safewalk_backend/env.dart';
 import 'package:safewalk_backend/repositories/usuario_repository.dart';
+import 'package:safewalk_backend/repositories/zona_repository.dart';
 import 'package:safewalk_backend/routes/auth_routes.dart';
+import 'package:safewalk_backend/routes/zona_routes.dart';
 
 Future<void> main() async {
   final db = await _connectWithRetry();
   final usuarios = UsuarioRepository(db.connection);
+  final zonas = ZonaRepository(db.connection);
   final auth = AuthRoutes(usuarios);
+  final zonaRoutes = ZonaRoutes(zonas);
 
   final root = Router();
   root.get('/healthz', (Request _) => Response.ok('{"status":"ok"}',
       headers: {'content-type': 'application/json'}));
   root.mount('/auth/', auth.router.call);
+  root.mount('/zonas', zonaRoutes.router.call);
 
   final handler = const Pipeline()
       .addMiddleware(_corsHeaders())
